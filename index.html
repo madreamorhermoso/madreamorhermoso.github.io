@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<!--
+  VERSIÓN AUTÓNOMA — para alojar FUERA de Google Apps Script
+  (web del colegio/parroquia, GitHub Pages, cualquier hosting estático).
+
+  Lee la hoja de cálculo directamente, así que la hoja debe estar compartida
+  como "Cualquier usuario con el enlace · Lector". El logotipo se carga desde
+  Drive: ese archivo también debe estar compartido con el enlace.
+
+  NO pegar este archivo en Apps Script: está pensado para servirse tal cual.
+-->
+
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendario Pastoral Edith Stein 2026-2027</title>
+<style>
+:root{
+  --infantil:#F59E0B; --primaria:#22C55E; --secundaria:#3B82F6;
+  --fp:#A855F7; --general:#E11D48;
+  --bg:#F8FAFC; --card:#fff; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:14px 24px;
+  position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.marca{display:flex;align-items:center;gap:14px}
+#logo{height:46px;width:auto;display:block;flex:0 0 auto}
+@media (max-width:520px){ #logo{height:36px} h1{font-size:16px} }
+.sub{color:var(--muted);font-size:12.5px;margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.st{display:inline-flex;align-items:center;gap:5px;font-weight:600;font-size:11.5px;
+  padding:2px 8px;border-radius:999px;background:#F1F5F9;color:var(--muted)}
+.st.ok{background:#ECFDF5;color:#059669} .st.warn{background:#FFFBEB;color:#B45309}
+.st.err{background:#FEF2F2;color:#DC2626}
+.st i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px}
+.tabs{display:flex;gap:4px;background:#F1F5F9;padding:3px;border-radius:9px}
+.tab{border:0;background:none;padding:7px 13px;border-radius:7px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--muted);font-family:inherit;white-space:nowrap}
+.tab.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);
+  background:#fff;padding:5px 11px;border-radius:999px;cursor:pointer;font-size:12.5px;
+  font-weight:600;font-family:inherit;transition:.12s}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.chip.on{color:#fff;border-color:transparent;background:var(--c)}
+.chip:not(.on){color:var(--c);opacity:.5}
+.chip .n{font-size:10.5px;opacity:.75}
+.spacer{flex:1}
+input[type=search]{border:1.5px solid var(--line);border-radius:8px;padding:7px 11px;
+  font-size:13px;font-family:inherit;width:190px;outline:none}
+input[type=search]:focus{border-color:#94A3B8}
+.btn{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;
+  cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted);font-family:inherit;
+  text-decoration:none;display:inline-block}
+.btn:hover{background:#F1F5F9}
+.btn.p{background:#0F172A;color:#fff;border-color:#0F172A} .btn.p:hover{background:#1E293B}
+main{padding:20px 24px 60px;max-width:1500px;margin:0 auto}
+.view{display:none} .view.on{display:block}
+
+/* CURSO */
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:16px}
+.month{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px;break-inside:avoid}
+.mname{font-weight:700;font-size:13.5px;margin-bottom:8px;display:flex;justify-content:space-between}
+.mname span{color:var(--muted);font-weight:600;font-size:11.5px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dow{text-align:center;font-size:10px;font-weight:700;color:#94A3B8;padding-bottom:3px}
+.day{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;font-size:11.5px;position:relative;color:#334155}
+.day.pad{visibility:hidden}
+.day.we{color:#CBD5E1}
+.day.fest{background:#FEF2F2;color:#DC2626;font-weight:700}
+.day.has{cursor:pointer;font-weight:700;color:var(--ink)}
+.day.has:hover{background:#F1F5F9}
+.dots{display:flex;gap:2px;position:absolute;bottom:3px}
+.dots i{width:5px;height:5px;border-radius:50%}
+.sel{outline:2px solid #0F172A;outline-offset:-2px}
+
+/* TIMELINE */
+.tlwrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+.tl{min-width:1100px;padding:0 0 14px}
+.tlhead{display:flex;border-bottom:1px solid var(--line);background:#fff}
+.tllab{flex:0 0 108px;padding:9px 12px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.tlmonths{flex:1;display:flex}
+.tlm{border-left:1px solid var(--line);padding:9px 6px;font-size:11.5px;font-weight:700;
+  color:var(--muted);text-align:center;overflow:hidden;white-space:nowrap}
+.tlrow{display:flex;border-bottom:1px solid #F1F5F9}
+.tlrow:last-child{border-bottom:0}
+.tlname{flex:0 0 108px;padding:10px 12px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.tlname i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+.tltrack{flex:1;position:relative;padding:8px 0}
+.ev{position:absolute;height:20px;border-radius:5px;color:#fff;font-size:10.5px;font-weight:600;
+  padding:0 6px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.ev:hover{filter:brightness(1.1);z-index:5;overflow:visible;width:auto!important}
+
+/* LISTADO */
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;overflow:hidden}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);
+  padding:10px 12px;background:#F8FAFC;border-bottom:1px solid var(--line);font-weight:700}
+td{padding:9px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;vertical-align:top}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#F8FAFC}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#fff}
+.tipo{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;
+  background:#F1F5F9;color:var(--muted)}
+.fecha{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted);font-size:12.5px}
+
+/* TRIMESTRES */
+.trims{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.trim{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.trim h2{margin:0 0 3px;font-size:15px}
+.trim .rng{color:var(--muted);font-size:11.5px;margin-bottom:12px}
+.tmonth{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:#94A3B8;margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--line)}
+.tmonth:first-of-type{margin-top:0}
+.item{display:flex;gap:9px;padding:5px 0;align-items:flex-start}
+.item b{flex:0 0 42px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:1px}
+.item i{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:5px}
+.item span{font-size:12.5px}
+
+/* PANEL */
+#panel{position:fixed;right:20px;bottom:20px;width:290px;background:#fff;border:1px solid var(--line);
+  border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.16);padding:14px 16px;z-index:80;display:none}
+#panel h3{margin:0 0 2px;font-size:14px}
+#panel .pd{color:var(--muted);font-size:12px;margin-bottom:10px}
+#panel .x{position:absolute;top:8px;right:10px;border:0;background:none;cursor:pointer;
+  color:#94A3B8;font-size:18px;line-height:1;font-family:inherit}
+#panel .pe{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:12.5px}
+#panel .pe i{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:5px}
+.empty{color:var(--muted);text-align:center;padding:40px;font-size:13px}
+.note{background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:11px 14px;
+  margin-bottom:16px;font-size:12.5px;color:#92400E}
+.note b{display:block;margin-bottom:4px}
+.note ul{margin:0;padding-left:18px} .note li{margin:2px 0}
+.alert{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px 14px;
+  margin-bottom:16px;font-size:12.5px;color:#991B1B;display:none}
+.alert b{display:block;margin-bottom:4px}
+.alert code{background:#fff;padding:1px 5px;border-radius:4px;font-size:11.5px}
+
+@media print{
+  header{position:static;box-shadow:none} .bar,.note,.alert,#panel{display:none}
+  body{background:#fff} main{padding:0} .months{grid-template-columns:repeat(4,1fr);gap:8px}
+  .month{border-color:#ccc}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">
+    <img id="logo" alt="Parroquia María Madre del Amor Hermoso">
+    <div>
+      <h1>Calendario</h1>
+      <div class="sub"><span id="curso">Curso</span>
+        <span class="st" id="estado"><i></i>Cargando…</span>
+      </div>
+    </div>
+  </div>
+  <div class="bar">
+    <div class="tabs">
+      <button class="tab on" data-v="curso">Curso completo</button>
+      <button class="tab" data-v="timeline">Timeline por ubicación</button>
+      <button class="tab" data-v="lista">Listado</button>
+      <button class="tab" data-v="trim">Trimestres</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="spacer"></div>
+    <input type="search" id="q" placeholder="Buscar…">
+    <a class="btn p" id="abrir" target="_blank" rel="noopener">Editar hoja</a>
+    <button class="btn" id="recargar">Recargar</button>
+    <button class="btn" onclick="window.print()">Imprimir</button>
+    <input type="file" id="file" accept=".csv,text/csv" hidden>
+  </div>
+</header>
+
+<main>
+  <div class="alert" id="alerta"></div>
+  <div class="note" id="pend" style="display:none"></div>
+  <div class="view on" id="v-curso"><div class="months" id="months"></div></div>
+  <div class="view" id="v-timeline"><div class="tlwrap"><div class="tl" id="tl"></div></div></div>
+  <div class="view" id="v-lista"><table><thead><tr>
+      <th style="width:130px">Fecha</th><th>Actividad</th><th style="width:110px">Ubicación</th>
+      <th style="width:110px">Tipo</th><th style="width:120px">Sala</th><th style="width:130px">Responsable</th><th style="width:130px">Grupo</th>
+    </tr></thead><tbody id="tbody"></tbody></table></div>
+  <div class="view" id="v-trim"><div class="trims" id="trims"></div></div>
+</main>
+
+<div id="panel"><button class="x" onclick="cerrar()">&times;</button>
+  <h3 id="pt"></h3><div class="pd" id="pdd"></div><div id="pl"></div></div>
+
+<script>
+/* ───────── Diagnóstico: nada debe quedarse en "Cargando…" en silencio ───── */
+function fallo_visible(titulo, detalle){
+  const e = document.getElementById("estado");
+  if(e){ e.className = "st err"; e.innerHTML = '<i></i>Error'; }
+  const a = document.getElementById("alerta");
+  if(a){ a.style.display = "block";
+    a.innerHTML = "<b>" + titulo + "</b>" + String(detalle || ""); }
+}
+window.addEventListener("error", ev=>{
+  fallo_visible("Error de JavaScript en la página",
+    String(ev.message) + " <code>" + (ev.filename||"") + ":" + (ev.lineno||"?") + "</code>");
+});
+window.addEventListener("unhandledrejection", ev=>{
+  fallo_visible("Fallo no controlado", String((ev.reason && ev.reason.message) || ev.reason || ""));
+});
+/* Perro guardián: si a los 25 s seguimos en "Cargando…", avisa en pantalla. */
+setTimeout(()=>{
+  const e = document.getElementById("estado");
+  if(e && /Cargando/.test(e.textContent))
+    fallo_visible("La carga no ha terminado",
+      "El servidor no ha contestado. Suele deberse a que la implementación publicada es una versión antigua: "
+      + "en Apps Script, <code>Implementar › Gestionar implementaciones › ✏️ › Versión: Nueva</code>.");
+}, 25000);
+
+/* ╔═══════════════════════════════════════════════════════════════════════╗
+   ║  CONFIGURACIÓN — es lo único que hay que tocar para un calendario     ║
+   ║  nuevo. Todo lo que viene después funciona igual sea cual sea el      ║
+   ║  proyecto.                                                            ║
+   ╚═══════════════════════════════════════════════════════════════════════╝ */
+const CONFIG = {
+
+  /* Identificador de la hoja: está en su URL, entre /d/ y /edit. */
+  HOJA_ID: "1CaXjpjcvycJkDnUflrjEBkKSc4BQbvazAl4Q0Zz6lrA",
+  HOJA_GID: "0",
+
+  /* ¿Enseñar el botón "Editar hoja"? En calendarios públicos, no. */
+  BOTON_EDITAR_HOJA: false,
+
+  /* Encabezado. */
+  TITULO   : "PARROQUIA MARÍA MADRE DEL AMOR HERMOSO",
+  SUBTITULO: "Calendario de actividades",
+  PESTANA_NAVEGADOR: "Calendario · Parroquia María Madre del Amor Hermoso",
+
+  /* Primer y último mes, como [año, mes] con enero = 0. */
+  PRIMER_MES: [2026, 7],
+  ULTIMO_MES: [2027, 11],
+
+  /* Columnas de la hoja por las que se filtra y que se muestran.
+     Escríbelas en minúscula, igual que la cabecera de la hoja. */
+  COL_FILTRO : "ubicación",
+  COL_SALA   : "sala",
+  COL_GRUPO  : "grupo o carisma",
+  NOMBRE_FILTRO: "ubicación",
+
+  /* Cómo se llama cada ubicación en la web. En la hoja se escribe la forma
+     corta —Templo, Capilla— y aquí se le pone el nombre completo. */
+  ETIQUETAS: {
+    Templo : "Templo (Vicente Carballal)",
+    Capilla: "Capilla (Estefanita)"
+  },
+
+  /* Valores del filtro y su color. Aquí, dónde se celebra. */
+  ETAPAS: {
+    Templo               : "#B4232C",
+    Capilla              : "#0D9488",
+    "Residencia Amavir"  : "#3B82F6"
+  },
+
+  /* Periodos para la vista agrupada y para lo que no tiene fecha. */
+  TRIMESTRES: [
+    { n: "Resto de 2026",       a: "2026-08-01", b: "2026-12-31", r: "agosto – diciembre 2026" },
+    { n: "Primer medio 2027",   a: "2027-01-01", b: "2027-06-30", r: "enero – junio 2027" },
+    { n: "Segundo medio 2027",  a: "2027-07-01", b: "2027-12-31", r: "julio – diciembre 2027" }
+  ]
+};
+
+/* ═════════════ A partir de aquí no hace falta tocar nada ═════════════ */
+
+const HOJA_ID  = CONFIG.HOJA_ID;
+const HOJA_GID = CONFIG.HOJA_GID;
+
+/* NO juntes en una sola línea las dos barras que van tras "https:".
+   Al servir la página, Apps Script borra todo lo que sigue a una doble barra
+   —la toma por un comentario— aunque esté dentro de un texto entrecomillado,
+   y te deja la URL a medias y la comilla sin cerrar. Por eso van por separado. */
+const BARRAS     = "/" + "/";
+const URL_EDITAR = "https:" + BARRAS + "docs.google.com/spreadsheets/d/" + HOJA_ID + "/edit";
+const URL_BASE   = "https:" + BARRAS + "docs.google.com/spreadsheets/d/" + HOJA_ID + "/gviz/tq";
+const URL_CSV    = `${URL_BASE}?tqx=out:csv&gid=${HOJA_GID}`;
+
+const ETAPAS = CONFIG.ETAPAS;
+
+/* Nombre largo de una ubicación, si lo tiene. */
+function etiqueta(e){ return (CONFIG.ETIQUETAS && CONFIG.ETIQUETAS[e]) || e; }
+
+/* Copia de seguridad: se usa solo si no se puede leer la hoja (sin internet,
+   hoja no compartida, etc.). No hace falta mantenerla al día. */
+const RESPALDO = `Fecha,Fecha fin,Actividad,Etapa,Tipo,Lugar,Responsable,Festivo,Notas
+2026-10-01,,Confesiones para 1er viernes,General,Liturgia,,,,
+2026-10-02,,Misa 1er Viernes de mes (10:55),General,Liturgia,,,,
+2026-11-01,,Todos los Santos,General,Festivo,,,Sí,
+2026-11-05,,Confesiones para 1er viernes,General,Liturgia,,,,
+2026-11-06,,Misa 1er Viernes de mes (10:55),General,Liturgia,,,,
+2026-11-09,,Ntra. Sra. de la Almudena,General,Festivo,,,Sí,
+2026-12-03,,Confesiones para 1er viernes,General,Liturgia,,,,
+2026-12-04,,Misa 1er Viernes de mes (10:55),General,Liturgia,,,,
+2026-12-06,,Día de la Constitución,General,Festivo,,,Sí,
+2026-12-07,,Lunes siguiente (no lectivo),General,Festivo,,,Sí,
+2026-12-08,,Inmaculada Concepción,General,Festivo,,,Sí,
+2026-12-21,2026-12-22,Voluntariados Navidad,Secundaria,Solidaridad,,,,
+2026-12-25,,Navidad,General,Festivo,,,Sí,
+2027-01-06,,Epifanía del Señor,General,Festivo,,,Sí,
+2027-02-02,,La Candelaria,General,Celebración,,,,
+2027-02-04,,Confesiones para 1er viernes,General,Liturgia,,,,
+2027-02-05,,Misa 1er Viernes de mes (10:55),General,Liturgia,,,,
+2027-02-10,,Miércoles de Ceniza,General,Celebración,,,,
+2027-03-04,,Confesiones para 1er viernes,General,Liturgia,,,,
+2027-03-05,,Misa 1er Viernes de mes (10:55),General,Liturgia,,,,
+2027-03-12,2027-03-18,Camino de Santiago,Secundaria,Convivencia,,,,
+2027-03-19,,San José,General,Festivo,,,Sí,
+2027-03-21,,Domingo de Ramos,General,Festivo,,,Sí,
+2027-03-25,,Jueves Santo,General,Festivo,,,Sí,
+2027-03-26,,Viernes Santo,General,Festivo,,,Sí,
+2027-03-28,,Domingo de Pascua,General,Festivo,,,Sí,
+2027-03-29,,Lunes de Pascua,General,Festivo,,,Sí,
+2027-04-01,,Confesiones para 1er viernes,General,Liturgia,,,,
+2027-04-02,,Misa 1er Viernes de mes (10:55),General,Liturgia,,,,
+2027-05-05,,Confesiones para 1er viernes,General,Liturgia,,,,
+2027-05-06,,Romería por cursos,General,Convivencia,,,,
+2027-05-07,,Misa 1er Viernes de mes (10:55),General,Liturgia,,,,
+2027-05-13,,Ofrenda floral Virgen de Fátima,General,Celebración,,,,
+2027-05-16,,Pentecostés,General,Festivo,,,Sí,
+2027-05-27,,Procesión Corpus Christi,General,Celebración,,,,
+2027-05-30,,Corpus Christi,General,Festivo,,,Sí,
+2027-06-03,,Confesiones para 1er viernes,General,Liturgia,,,,
+2027-06-04,,Sagrado Corazón de Jesús,General,Celebración,,,,
+,,Posadas de Navidad,General,Celebración,,,,1er trimestre - pendiente de fecha
+,,Voluntariado,General,Solidaridad,,,,1er trimestre - pendiente de fecha
+,,Festival de villancicos,General,Celebración,,,,1er trimestre - pendiente de fecha
+,,Vía Crucis procesional,General,Liturgia,,,,2º trimestre - pendiente de fecha
+,,"Ofrenda Fátima (mejorar, con rosario)",General,Celebración,,,,3er trimestre - pendiente de fecha
+,,Altares de mayo,General,Celebración,,,,3er trimestre - pendiente de fecha`;
+
+/* ═══════════════ A partir de aquí no hace falta tocar nada ═══════════════ */
+
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto",
+               "Septiembre","Octubre","Noviembre","Diciembre"];
+const MESES_C = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const DOW = ["L","M","X","J","V","S","D"];
+/* Lista de meses del curso, de PRIMER_MES a ULTIMO_MES, ambos incluidos. */
+const CURSO = (function(){
+  const out=[]; let [y,m]=CONFIG.PRIMER_MES; const [fy,fm]=CONFIG.ULTIMO_MES;
+  while(y<fy || (y===fy && m<=fm)){ out.push([y,m]); m++; if(m>11){ m=0; y++; } }
+  return out;
+})();
+const INI   = new Date(CONFIG.PRIMER_MES[0], CONFIG.PRIMER_MES[1], 1);
+const FIN_C = new Date(CONFIG.ULTIMO_MES[0], CONFIG.ULTIMO_MES[1]+1, 0);
+const TOTAL = Math.round((FIN_C-INI)/864e5)+1;
+const TRIMS = CONFIG.TRIMESTRES;
+
+let DATOS = [], PENDIENTES = [];
+let activas = new Set(Object.keys(ETAPAS));
+let busca = "", vista = "curso";
+
+const pd = s => {const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d);};
+const key = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ───────── Lector de CSV (soporta comillas y saltos de línea dentro) ───── */
+function parseCSV(txt){
+  txt = txt.replace(/^﻿/,"").replace(/\r\n?/g,"\n");
+  const out=[]; let row=[], cell="", q=false;
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(q){ if(c==='"'){ if(txt[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===","){ row.push(cell); cell=""; }
+    else if(c==="\n"){ row.push(cell); out.push(row); row=[]; cell=""; }
+    else cell+=c;
+  }
+  if(cell!=="" || row.length){ row.push(cell); out.push(row); }
+  return out.filter(r=>r.some(c=>c.trim()!==""));
+}
+
+/* ───────── Fechas: acepta AAAA-MM-DD, D/M/AAAA, M/D/AAAA y Date(a,m,d) ─── */
+function detectarOrden(valores){
+  let dm=false, md=false;
+  valores.forEach(v=>{
+    const m=/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/.exec(v.trim());
+    if(m){ if(+m[1]>12) dm=true; if(+m[2]>12) md=true; }
+  });
+  return md && !dm ? "MDY" : "DMY";   // por defecto, formato español
+}
+function aISO(v, orden){
+  v=(v||"").trim(); if(!v) return "";
+  let m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v);
+  if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  m=/^Date\((\d+),(\d+),(\d+)\)/.exec(v);
+  if(m) return `${m[1]}-${String(+m[2]+1).padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  m=/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/.exec(v);
+  if(m){ const a=orden==="MDY"?[m[2],m[1]]:[m[1],m[2]];
+         return `${m[3]}-${a[1].padStart(2,"0")}-${a[0].padStart(2,"0")}`; }
+  const d=new Date(v); return isNaN(d) ? "" : key(d);
+}
+
+/* ───────── Horas: acepta 10:00, 10.00, 10h30, 10:00:00 y 10 ───────── */
+function aHora(v){
+  v=(v||"").trim(); if(!v) return "";
+  let m=/(\d{1,2})\s*[:.hH]\s*(\d{2})/.exec(v);
+  if(!m){ const s=/^(\d{1,2})$/.exec(v); if(!s) return ""; m=[null,s[1],"00"]; }
+  const h=Number(m[1]), mi=Number(m[2]);
+  if(h>23||mi>59) return "";
+  return String(h).padStart(2,"0")+":"+String(mi).padStart(2,"0");
+}
+/* Texto de la hora de una actividad: "10:00–11:00", "10:00" o "" si es de día completo. */
+function hora(x){
+  if(!x.hi) return "";
+  return x.hf && x.hf!==x.hi ? x.hi+"–"+x.hf : x.hi;
+}
+
+/* ───────── Repeticiones ─────────
+   La versión servida por Apps Script las despliega el servidor; aquí, al leer
+   la hoja directamente, se despliegan en el navegador. Una fila con Repetir
+   "Semanal" y su "Repetir hasta" se convierte en todas sus fechas. */
+function desplegarRepeticiones(filas){
+  if(!filas.length) return filas;
+  const cab = filas[0].map(h=>String(h).trim().toLowerCase());
+  const iF=cab.indexOf("fecha"), iFF=cab.indexOf("fecha fin"),
+        iR=cab.indexOf("repetir"), iRH=cab.indexOf("repetir hasta");
+  if(iF<0||iR<0) return filas;
+  const tope0 = new Date(CONFIG.ULTIMO_MES[0], CONFIG.ULTIMO_MES[1]+1, 0);
+  const orden = detectarOrden(filas.slice(1).map(r=>r[iF]||""));
+  const aF = v => { const t=aISO(v,orden); return t?pd(t):null; };
+  const salida=[filas[0]];
+  filas.slice(1).forEach(fila=>{
+    const pauta=String(fila[iR]||"").trim().toLowerCase();
+    const desde=aF(fila[iF]);
+    if(!pauta||!desde){ salida.push(fila); return; }
+    const tope=aF(iRH>=0?fila[iRH]:"")||tope0;
+    const fin=iFF>=0?aF(fila[iFF]):null;
+    const dura=fin?Math.round((fin-desde)/864e5):0;
+    const sig=n=>{
+      if(pauta.indexOf("seman")===0)  return new Date(desde.getTime()+n*7*864e5);
+      if(pauta.indexOf("quincen")===0) return new Date(desde.getTime()+n*14*864e5);
+      if(pauta.indexOf("mensu")===0){ const d=new Date(desde.getTime()); d.setMonth(d.getMonth()+n); return d; }
+      if(pauta.indexOf("anual")===0){ const d=new Date(desde.getTime()); d.setFullYear(d.getFullYear()+n); return d; }
+      return null;
+    };
+    let cuando=desde, n=0;
+    while(cuando && cuando<=tope && n<400){
+      const c=fila.slice();
+      c[iF]=key(cuando);
+      if(iFF>=0 && dura>0) c[iFF]=key(new Date(cuando.getTime()+dura*864e5));
+      c[iR]=""; if(iRH>=0) c[iRH]="";
+      salida.push(c);
+      n++; cuando=sig(n);
+    }
+  });
+  return salida;
+}
+
+/* ───────── Convierte el CSV en DATOS + PENDIENTES ───────── */
+function cargar(txt){ return cargarFilas(parseCSV(txt)); }
+
+function cargarFilas(filas0){
+  const filas = desplegarRepeticiones(filas0);
+  if(!filas.length) throw new Error("hoja vacía");
+  const cab = filas[0].map(h=>h.trim().toLowerCase());
+  const col = n => cab.findIndex(h=>h===n);
+  const iF=col("fecha"), iFF=col("fecha fin"), iA=col("actividad"),
+        iE=col(CONFIG.COL_FILTRO), iT=col("tipo"), iL=col(CONFIG.COL_SALA),
+        iG=col(CONFIG.COL_GRUPO), iR=col("responsable"), iX=col("festivo"),
+        iN=col("notas"), iHI=col("hora inicio"), iHF=col("hora fin");
+  if(iF<0||iA<0) throw new Error("faltan las columnas Fecha o Actividad");
+
+  const orden = detectarOrden(filas.slice(1).map(r=>r[iF]||""));
+  const datos=[], pend={};
+  filas.slice(1).forEach(r=>{
+    const t=(r[iA]||"").trim(); if(!t) return;
+    let e=(r[iE]||"").trim();
+    const enc = Object.keys(ETAPAS).find(k=>k.toLowerCase()===e.toLowerCase());
+    e = enc || Object.keys(ETAPAS)[0];
+    const f = aISO(r[iF], orden);
+    const nota = (iN>=0 ? r[iN]||"" : "").trim();
+    if(!f){                                   // sin fecha → pendiente
+      const tr = /1er|1º|primer/i.test(nota) ? "1er trimestre"
+               : /2º|2o|segundo/i.test(nota) ? "2º trimestre"
+               : /3er|3º|tercer/i.test(nota) ? "3er trimestre" : "Sin trimestre";
+      (pend[tr] = pend[tr] || []).push(t);
+      return;
+    }
+    datos.push({
+      f, fin: iFF>=0 ? aISO(r[iFF], orden)||null : null, t, e,
+      hi: iHI>=0 ? aHora(r[iHI]) : "", hf: iHF>=0 ? aHora(r[iHF]) : "",
+      tipo:(iT>=0?r[iT]:"" ).trim(), lugar:(iL>=0?r[iL]:"").trim(), resp:(iR>=0?r[iR]:"").trim(),
+      grupo:(iG>=0?r[iG]:"").trim(),
+      fest: iX>=0 && /^(s[ií]|x|1|true|v)/i.test((r[iX]||"").trim())
+    });
+  });
+  /* Por fecha y, dentro del día, por hora. Lo de día completo va primero. */
+  const orden2 = x => x.f + x.hi;
+  DATOS = datos.sort((a,b)=>orden2(a)<orden2(b)?-1:orden2(a)>orden2(b)?1:0);
+  PENDIENTES = TRIMS.map(t=>({tr:t.n, items:pend[t.n]||[]}))
+                    .concat(pend["Sin trimestre"] ? [{tr:"Sin trimestre asignado", items:pend["Sin trimestre"]}] : [])
+                    .filter(p=>p.items.length);
+}
+
+/* ───────── Carga desde la hoja, con respaldo ─────────
+   Se usa JSONP (se inyecta una etiqueta de script) en lugar de fetch, porque al
+   abrir este archivo con doble clic el navegador lo trata como origen "file://"
+   y bloquea por CORS cualquier petición normal a Google. Un script inyectado no
+   pasa por CORS, así que funciona igual en local que servido desde un servidor. */
+const estado = document.getElementById("estado");
+function marcar(cls, txt){ estado.className="st "+cls; estado.innerHTML='<i></i>'+txt; }
+
+/* Valor de una celda gviz: prioriza el Date(a,m,d) por ser el formato sin ambigüedad */
+function celda(c){
+  if(!c) return "";
+  if(typeof c.v === "string" && /^Date\(/.test(c.v)) return c.v;
+  if(c.f != null) return String(c.f);
+  return c.v == null ? "" : String(c.v);
+}
+
+function traerJSONP(){
+  return new Promise((ok, fallo)=>{
+    const cb = "__pastoral" + Date.now();
+    const s  = document.createElement("script");
+    const limpiar = ()=>{ delete window[cb]; s.remove(); clearTimeout(reloj); };
+    const reloj = setTimeout(()=>{ limpiar(); fallo(new Error("sin respuesta de Google")); }, 12000);
+    window[cb] = resp =>{
+      limpiar();
+      try{
+        if(!resp || resp.status === "error")
+          return fallo(new Error((resp?.errors?.[0]?.detailed_message || "la hoja no es accesible")
+                                 .replace(/<[^>]+>/g,"").slice(0,120)));
+        const t = resp.table;
+        const filas = [t.cols.map(c=>c.label || c.id)]
+                        .concat(t.rows.map(r=>t.cols.map((_,i)=>celda(r.c && r.c[i]))));
+        cargarFilas(filas); ok();
+      }catch(e){ fallo(e); }
+    };
+    s.onerror = ()=>{ limpiar(); fallo(new Error("no se pudo contactar con Google")); };
+    s.src = `${URL_BASE}?tqx=out:json;responseHandler:${cb}&gid=${HOJA_GID}&headers=1&_=${Date.now()}`;
+    document.head.appendChild(s);
+  });
+}
+
+/* Si esta misma página se sirve desde Google Apps Script, los datos los entrega
+   el servidor y no hace falta ni JSONP ni que la hoja sea pública.
+   Ojo: Apps Script inyecta google.script.run DESPUÉS de esta parte de la página,
+   así que hay que esperarlo en vez de comprobarlo una sola vez al arrancar. */
+function enGoogle(){
+  return typeof google !== "undefined" && !!(google.script && google.script.run);
+}
+function pareceGoogle(){
+  const h = (location && location.hostname) || "";
+  return /googleusercontent\.com$/.test(h) || h === "script.google.com";
+}
+function esperarGoogle(ms){
+  return new Promise(ok=>{
+    if(enGoogle()) return ok(true);
+    if(!pareceGoogle()) return ok(false);          // en local no tiene sentido esperar
+    const t0 = Date.now();
+    const i = setInterval(()=>{
+      if(enGoogle() || Date.now()-t0 > ms){ clearInterval(i); ok(enGoogle()); }
+    }, 100);
+  });
+}
+
+function traerAppsScript(){
+  return new Promise((ok, fallo)=>{
+    const reloj = setTimeout(()=>fallo(new Error("el servidor no respondió en 8 s")), 8000);
+    google.script.run
+      .withSuccessHandler(filas=>{ clearTimeout(reloj);
+        try{ cargarFilas(filas); ok(); }catch(e){ fallo(e); } })
+      .withFailureHandler(e=>{ clearTimeout(reloj);
+        fallo(new Error((e && e.message) || "error del servidor")); })
+      .getDatos();
+  });
+}
+
+/* Plan B: fetch normal. Solo funciona si la web se sirve por http(s). */
+async function traerFetch(){
+  const r = await fetch(URL_CSV + "&_=" + Date.now(), {cache:"no-store"});
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  const txt = await r.text();
+  if(/^\s*</.test(txt)) throw new Error("la hoja no es pública");
+  cargar(txt);
+}
+
+async function traer(){
+  marcar("", "Cargando…");
+  document.getElementById("alerta").style.display = "none";
+  /* Se prueban por orden y se para en el primero que funcione. */
+  const intentos = [];
+  if(await esperarGoogle(6000)) intentos.push(["servidor de Google", traerAppsScript]);
+  intentos.push(["lectura directa de la hoja", traerJSONP],
+                ["descarga del CSV", traerFetch]);
+
+  let err = null; const fallos = [];
+  for(const [nombre, fn] of intentos){
+    try{ await fn(); err = null; break; }
+    catch(e){ fallos.push(nombre + " → " + ((e && e.message) || e)); err = e; }
+  }
+  if(!err){
+    const h = new Date();
+    marcar("ok", `Hoja de Google · ${DATOS.length} actividades · ${String(h.getHours()).padStart(2,"0")}:${String(h.getMinutes()).padStart(2,"0")}`);
+  }else{
+    try{ cargar(RESPALDO); }catch(e){ DATOS=[]; PENDIENTES=[]; }
+    marcar("warn", "Datos locales · sin conexión con la hoja");
+    const a = document.getElementById("alerta");
+    a.style.display = "block";
+    a.innerHTML = `<b>No se ha podido leer la hoja de Google. Mostrando la copia local.</b>
+      Comprueba que hay conexión y que la hoja sigue compartida como
+      <code>Cualquier usuario que tenga el enlace · Lector</code>.
+      <br>Mientras tanto puedes <button class="btn" style="margin:7px 0" onclick="document.getElementById('file').click()">cargar un CSV a mano</button>
+      <br><small style="opacity:.75">Detalle técnico: ${esc(fallos.join(" · "))}</small>`;
+  }
+  pintarChips(); render();
+}
+
+document.getElementById("file").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{ try{ cargar(rd.result); marcar("ok", `CSV local · ${DATOS.length} actividades`);
+      document.getElementById("alerta").style.display="none"; pintarChips(); render(); }
+    catch(x){ alert("No se pudo leer el CSV: "+x.message); } };
+  rd.readAsText(f, "UTF-8");
+};
+
+/* ───────── Filtros ───────── */
+function visibles(){
+  return DATOS.filter(x => activas.has(x.e) &&
+    (!busca || (x.t+" "+x.lugar+" "+x.resp+" "+x.tipo).toLowerCase().includes(busca)));
+}
+function porDia(){
+  const m={};
+  visibles().forEach(x=>{
+    let d=pd(x.f), f=x.fin?pd(x.fin):d;
+    while(d<=f){ (m[key(d)]=m[key(d)]||[]).push(x); d=new Date(d.getTime()+864e5); }
+  });
+  return m;
+}
+
+const chips = document.getElementById("chips");
+function pintarChips(){
+  const cnt={}; DATOS.forEach(x=>cnt[x.e]=(cnt[x.e]||0)+1);
+  chips.innerHTML="";
+  Object.keys(ETAPAS).forEach(e=>{
+    const b=document.createElement("button");
+    b.className="chip"+(activas.has(e)?" on":""); b.dataset.e=e;
+    b.style.setProperty("--c", ETAPAS[e]);
+    b.innerHTML=`<span class="dot"></span>${etiqueta(e)}<span class="n">${cnt[e]||0}</span>`;
+    b.onclick=()=>{
+      const todas=Object.keys(ETAPAS);
+      if(activas.has(e) && activas.size===todas.length) activas=new Set([e]);
+      else if(activas.has(e)){ activas.delete(e); if(!activas.size) activas=new Set(todas); }
+      else activas.add(e);
+      pintarChips(); render();
+    };
+    chips.appendChild(b);
+  });
+}
+
+/* ───────── Vistas ───────── */
+function curso(){
+  const dias=porDia();
+  document.getElementById("months").innerHTML = CURSO.map(([y,m])=>{
+    const first=new Date(y,m,1), n=new Date(y,m+1,0).getDate();
+    let off=(first.getDay()+6)%7, cells="", cnt=0;
+    for(let i=0;i<off;i++) cells+='<div class="day pad"></div>';
+    for(let d=1;d<=n;d++){
+      const dt=new Date(y,m,d), k=key(dt), evs=dias[k]||[];
+      const we=dt.getDay()===0||dt.getDay()===6, fest=evs.some(e=>e.fest);
+      if(evs.length) cnt++;
+      const etp=[...new Set(evs.map(e=>e.e))];
+      const dots=etp.length?'<div class="dots">'+etp.map(e=>`<i style="background:${ETAPAS[e]}"></i>`).join("")+'</div>':"";
+      cells+=`<div class="day${we?" we":""}${fest?" fest":""}${evs.length?" has":""}" ${evs.length?`data-k="${k}"`:""}>${d}${dots}</div>`;
+    }
+    return `<div class="month"><div class="mname">${MESES[m]} <span>${y}${cnt?" · "+cnt:""}</span></div>
+      <div class="grid">${DOW.map(x=>`<div class="dow">${x}</div>`).join("")}${cells}</div></div>`;
+  }).join("");
+  document.querySelectorAll("#months .day.has").forEach(el=> el.onclick=()=>abrir(el.dataset.k, el));
+}
+
+function timeline(){
+  const evs=visibles();
+  const head=`<div class="tlhead"><div class="tllab">Ubicación</div><div class="tlmonths">`+
+    CURSO.map(([y,m])=>`<div class="tlm" style="flex:${new Date(y,m+1,0).getDate()} 0 0">${MESES_C[m]}</div>`).join("")+
+    `</div></div>`;
+  const rows=Object.keys(ETAPAS).filter(e=>activas.has(e)).map(e=>{
+    const mine=evs.filter(x=>x.e===e);
+    const lanes=[];
+    const bars=mine.map(x=>{
+      const s=pd(x.f), f=x.fin?pd(x.fin):s;
+      const o=Math.round((s-INI)/864e5), dur=Math.round((f-s)/864e5)+1;
+      let ln=lanes.findIndex(v=>v<=o-1);
+      if(ln<0){ ln=lanes.length; lanes.push(0); }
+      lanes[ln]=o+Math.max(dur,16);
+      return `<div class="ev" style="left:${(o/TOTAL*100).toFixed(3)}%;width:${Math.max(dur/TOTAL*100,.9).toFixed(3)}%;
+        top:${8+ln*24}px;background:${ETAPAS[e]}" title="${esc(x.t)} — ${fmt(x)}">${esc(x.t)}</div>`;
+    }).join("");
+    const h=Math.max(56, 16+Math.max(lanes.length,1)*24);
+    return `<div class="tlrow" style="min-height:${h}px">
+      <div class="tlname"><i style="background:${ETAPAS[e]}"></i>${etiqueta(e)}</div>
+      <div class="tltrack">${bars}</div></div>`;
+  }).join("");
+  document.getElementById("tl").innerHTML = head + (rows || '<div class="empty">Sin actividades con los filtros actuales.</div>');
+}
+
+function fmt(x){
+  const s=pd(x.f), t=`${s.getDate()} ${MESES_C[s.getMonth()]} ${s.getFullYear()}`;
+  if(!x.fin) return t;
+  const f=pd(x.fin);
+  return s.getMonth()===f.getMonth()
+    ? `${s.getDate()}–${f.getDate()} ${MESES_C[f.getMonth()]} ${f.getFullYear()}`
+    : `${s.getDate()} ${MESES_C[s.getMonth()]} – ${f.getDate()} ${MESES_C[f.getMonth()]} ${f.getFullYear()}`;
+}
+function lista(){
+  const evs=visibles();
+  document.getElementById("tbody").innerHTML = evs.length ? evs.map(x=>`<tr>
+    <td class="fecha">${fmt(x)}${hora(x)?`<div style="color:#94A3B8;font-size:11.5px">${hora(x)}</div>`:""}</td><td>${esc(x.t)}</td>
+    <td><span class="tag" style="background:${ETAPAS[x.e]}">${etiqueta(x.e)}</span></td>
+    <td><span class="tipo">${esc(x.tipo||"—")}</span></td>
+    <td>${esc(x.lugar||"—")}</td><td>${esc(x.resp||"—")}</td>
+    <td>${esc(x.grupo||"—")}</td></tr>`).join("")
+    : '<tr><td colspan="7" class="empty">Sin resultados.</td></tr>';
+}
+
+function trims(){
+  const evs=visibles();
+  document.getElementById("trims").innerHTML = TRIMS.map(T=>{
+    const mine=evs.filter(x=>x.f>=T.a && x.f<=T.b);
+    let out="", last="";
+    mine.forEach(x=>{
+      const d=pd(x.f), mk=MESES[d.getMonth()]+" "+d.getFullYear();
+      if(mk!==last){ out+=`<div class="tmonth">${mk}</div>`; last=mk; }
+      const s=pd(x.f), f=x.fin?pd(x.fin):s;
+      const lab=x.fin?`${s.getDate()}–${f.getDate()}`:`${s.getDate()}`;
+      out+=`<div class="item"><b>${lab}</b><i style="background:${ETAPAS[x.e]}"></i>
+        <span>${esc(x.t)}${hora(x)?` <span style="color:#64748B">· ${hora(x)}</span>`:""}${x.lugar?` <span style="color:#94A3B8">· ${esc(x.lugar)}</span>`:""}</span></div>`;
+    });
+    const p=PENDIENTES.find(p=>p.tr===T.n);
+    if(p) out+=`<div class="tmonth">Sin fecha asignada</div>`+
+      p.items.map(t=>`<div class="item"><b>—</b><i style="background:#CBD5E1"></i>
+        <span style="color:#94A3B8">${esc(t)}</span></div>`).join("");
+    return `<div class="trim"><h2>${T.n}</h2><div class="rng">${T.r} · ${mine.length} actividades</div>
+      ${out || '<div class="empty">Sin actividades.</div>'}</div>`;
+  }).join("");
+}
+
+function abrir(k, el){
+  document.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel"));
+  el.classList.add("sel");
+  const evs=porDia()[k]||[], d=pd(k);
+  document.getElementById("pt").textContent=`${d.getDate()} de ${MESES[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`;
+  document.getElementById("pdd").textContent=["lunes","martes","miércoles","jueves","viernes","sábado","domingo"][(d.getDay()+6)%7];
+  document.getElementById("pl").innerHTML=evs.map(x=>`<div class="pe">
+    <i style="background:${ETAPAS[x.e]}"></i><div><b>${esc(x.t)}</b><br>
+    <span style="color:#64748B;font-size:11.5px">${hora(x)?"<b>"+hora(x)+"</b> · ":"Todo el día · "}${x.e}${x.tipo?" · "+esc(x.tipo):""}${x.lugar?" · "+esc(x.lugar):""}${x.resp?" · "+esc(x.resp):""}${x.grupo?" · "+esc(x.grupo):""}</span></div></div>`).join("");
+  document.getElementById("panel").style.display="block";
+}
+function cerrar(){
+  document.getElementById("panel").style.display="none";
+  document.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel"));
+}
+
+/* ───────── Controles ───────── */
+document.title = CONFIG.PESTANA_NAVEGADOR;
+document.querySelector("header h1").textContent = CONFIG.TITULO;
+document.getElementById("curso").textContent = CONFIG.SUBTITULO;
+const botonHoja = document.getElementById("abrir");
+if (CONFIG.BOTON_EDITAR_HOJA) botonHoja.href = URL_EDITAR; else botonHoja.remove();
+document.getElementById("recargar").onclick = traer;
+document.querySelectorAll(".tab").forEach(t=> t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on"); vista=t.dataset.v;
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  document.getElementById("v-"+vista).classList.add("on");
+  cerrar(); render();
+});
+document.getElementById("q").oninput = e => { busca=e.target.value.trim().toLowerCase(); render(); };
+document.addEventListener("keydown", e => e.key==="Escape" && cerrar());
+
+function render(){
+  const p=document.getElementById("pend");
+  if(PENDIENTES.length){ p.style.display="block";
+    p.innerHTML="<b>Actividades previstas sin fecha asignada</b><ul>"+
+      PENDIENTES.map(x=>`<li><b style="display:inline">${esc(x.tr)}:</b> ${x.items.map(esc).join(" · ")}</li>`).join("")+"</ul>";
+  } else p.style.display="none";
+  if(vista==="curso") curso();
+  else if(vista==="timeline") timeline();
+  else if(vista==="lista") lista();
+  else trims();
+}
+/* ───────── Logotipo ─────────
+   Lo sirve el servidor desde Drive: así el archivo no engorda con el código de
+   la imagen y no hace falta que el logotipo esté publicado en ninguna parte. */
+/* Logotipo: se carga desde Drive. El archivo debe estar compartido como
+   "cualquier usuario con el enlace"; si no carga, se oculta sin molestar. */
+function pintarLogo(){
+  const img = document.getElementById("logo");
+  img.onerror = function(){ img.style.display = "none"; };
+  img.src = "https:" + BARRAS + "drive.google.com/thumbnail?id=1RyLVyqMpPq0l6c8QX_WOtA1xq9iJLJxu&sz=w400";
+}
+
+/* Arrancar solo cuando la página esté del todo cargada: Apps Script inyecta su
+   API al final, y si se lanza antes no llega a detectarse. */
+function arrancar(){ traer(); pintarLogo(); }
+if(document.readyState === "complete") arrancar();
+else window.addEventListener("load", arrancar);
+</script>
+</body>
+</html>
