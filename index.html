@@ -124,7 +124,7 @@ tbody tr:hover{background:#F8FAFC}
 .item span{font-size:12.5px}
 
 /* PANEL */
-#panel{position:fixed;right:20px;bottom:20px;width:290px;background:#fff;border:1px solid var(--line);
+#panel{position:absolute;width:290px;background:#fff;border:1px solid var(--line);
   border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.16);padding:14px 16px;z-index:80;display:none}
 #panel h3{margin:0 0 2px;font-size:14px}
 #panel .pd{color:var(--muted);font-size:12px;margin-bottom:10px}
@@ -760,7 +760,14 @@ function abrir(k, el){
   document.getElementById("pl").innerHTML=evs.map(x=>`<div class="pe">
     <i style="background:${ETAPAS[x.e]}"></i><div><b>${esc(x.t)}</b><br>
     <span style="color:#64748B;font-size:11.5px">${hora(x)?"<b>"+hora(x)+"</b> · ":"Todo el día · "}${x.e}${x.tipo?" · "+esc(x.tipo):""}${x.lugar?" · "+esc(x.lugar):""}${x.resp?" · "+esc(x.resp):""}${x.grupo?" · "+esc(x.grupo):""}</span></div></div>`).join("");
-  document.getElementById("panel").style.display="block";
+  const panel = document.getElementById("panel");
+  panel.style.display = "block";
+  /* Junto al día pulsado: dentro de un iframe, la esquina fija queda fuera de la vista. */
+  const caja = el.getBoundingClientRect();
+  const izq = Math.max(10, Math.min(caja.left + window.scrollX - 40,
+              document.documentElement.scrollWidth - 310));
+  panel.style.left = izq + "px";
+  panel.style.top  = (caja.bottom + window.scrollY + 10) + "px";
 }
 function cerrar(){
   document.getElementById("panel").style.display="none";
