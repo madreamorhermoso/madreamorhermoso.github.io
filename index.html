@@ -512,6 +512,12 @@ function marcar(cls, txt){ estado.className="st "+cls; estado.innerHTML='<i></i>
 /* Valor de una celda gviz: prioriza el Date(a,m,d) por ser el formato sin ambigüedad */
 function celda(c){
   if(!c) return "";
+  /* Una hora suelta llega como Date(1899,11,30,H,M,S): usar el texto formateado. */
+  if(typeof c.v === "string" && /^Date\(1899,11,30/.test(c.v)){
+    if(c.f != null) return String(c.f);
+    const t = /^Date\(1899,11,30,(\d+),(\d+)/.exec(c.v);
+    return t ? (t[1] + ":" + ("0" + t[2]).slice(-2)) : "";
+  }
   if(typeof c.v === "string" && /^Date\(/.test(c.v)) return c.v;
   if(c.f != null) return String(c.f);
   return c.v == null ? "" : String(c.v);
