@@ -641,7 +641,7 @@ function porDia(){
   const m={};
   visibles().forEach(x=>{
     let d=pd(x.f), f=x.fin?pd(x.fin):d;
-    while(d<=f){ (m[key(d)]=m[key(d)]||[]).push(x); d.setDate(d.getDate()+1); }
+    while(d<=f){ (m[key(d)]=m[key(d)]||[]).push(x); d=new Date(d.getFullYear(), d.getMonth(), d.getDate()+1); }
   });
   return m;
 }
