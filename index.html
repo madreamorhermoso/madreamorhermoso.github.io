@@ -436,8 +436,10 @@ function desplegarRepeticiones(filas){
     const fin=iFF>=0?aF(fila[iFF]):null;
     const dura=fin?Math.round((fin-desde)/864e5):0;
     const sig=n=>{
-      if(pauta.indexOf("seman")===0)  return new Date(desde.getTime()+n*7*864e5);
-      if(pauta.indexOf("quincen")===0) return new Date(desde.getTime()+n*14*864e5);
+      /* Con setDate y no con milisegundos: el cambio de hora de octubre
+         haría caer cada semana una hora antes, o sea, en el día anterior. */
+      if(pauta.indexOf("seman")===0){ const d=new Date(desde.getTime()); d.setDate(d.getDate()+n*7); return d; }
+      if(pauta.indexOf("quincen")===0){ const d=new Date(desde.getTime()); d.setDate(d.getDate()+n*14); return d; }
       if(pauta.indexOf("mensu")===0){ const d=new Date(desde.getTime()); d.setMonth(d.getMonth()+n); return d; }
       if(pauta.indexOf("anual")===0){ const d=new Date(desde.getTime()); d.setFullYear(d.getFullYear()+n); return d; }
       return null;
@@ -446,7 +448,7 @@ function desplegarRepeticiones(filas){
     while(cuando && cuando<=tope && n<400){
       const c=fila.slice();
       c[iF]=key(cuando);
-      if(iFF>=0 && dura>0) c[iFF]=key(new Date(cuando.getTime()+dura*864e5));
+      if(iFF>=0 && dura>0){ const df=new Date(cuando.getTime()); df.setDate(df.getDate()+dura); c[iFF]=key(df); }
       c[iR]=""; if(iRH>=0) c[iRH]="";
       salida.push(c);
       n++; cuando=sig(n);
@@ -639,7 +641,7 @@ function porDia(){
   const m={};
   visibles().forEach(x=>{
     let d=pd(x.f), f=x.fin?pd(x.fin):d;
-    while(d<=f){ (m[key(d)]=m[key(d)]||[]).push(x); d=new Date(d.getTime()+864e5); }
+    while(d<=f){ (m[key(d)]=m[key(d)]||[]).push(x); d.setDate(d.getDate()+1); }
   });
   return m;
 }
